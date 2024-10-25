@@ -290,6 +290,22 @@ public class CalendarFieldForm extends AbstractForm implements IAdvancedExampleF
             calendarAppointment.getDescriptionElements().add(BEANS.get(CalendarItemDescriptionElement.class).withText("Lisa Turner").withIconId(Icons.PersonSolid));
             result.add(calendarAppointment);
 
+            cal.add(DAY_OF_YEAR, 1);
+            cal.set(HOUR_OF_DAY, 16);
+            cal.set(MINUTE, 0);
+            start = cal.getTime();
+            calendarAppointment = new CalendarAppointment();
+            calendarAppointment.setItemId(9L);
+            calendarAppointment.setPerson(2L);
+            calendarAppointment.setStart(start);
+            calendarAppointment.setFullDay(false);
+            calendarAppointment.setSubject("Call Frank");
+            calendarAppointment.setCssClass(cssClass);
+            calendarAppointment.setSubjectLabel("Private Appointment");
+            calendarAppointment.setResourceId(BEANS.get(ICalendarService.class).getPrivateCalendar().getResourceId());
+            calendarAppointment.getDescriptionElements().add(BEANS.get(CalendarItemDescriptionElement.class).withText("Frank Walter").withIconId(Icons.PersonSolid));
+            result.add(calendarAppointment);
+
             result.addAll(m_configuredAppointments);
           }
 

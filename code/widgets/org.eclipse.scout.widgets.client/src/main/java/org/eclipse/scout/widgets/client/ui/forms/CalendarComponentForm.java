@@ -141,11 +141,6 @@ public class CalendarComponentForm extends AbstractForm {
       protected String getConfiguredLabel() {
         return "End";
       }
-
-      @Override
-      protected boolean getConfiguredMandatory() {
-        return true;
-      }
     }
 
     @Order(2500)
