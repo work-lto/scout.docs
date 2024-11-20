@@ -119,8 +119,10 @@ public class OpenTelemetryInitializer implements IPlatformListener {
         toResourceAttribute("scout.platform.version", CONFIG.getPropertyValue(PlatformVersionProperty.class)),
         toResourceAttribute("scout.application.version", CONFIG.getPropertyValue(ApplicationVersionProperty.class))));
 
+    defaultConfig.put("otel.exporter.otlp.protocol", "http/protobuf");
+
     // Traces
-    defaultConfig.put("otel.traces.exporter", "none");
+    defaultConfig.put("otel.traces.exporter", defaultExporter);
 
     // Metrics
     defaultConfig.put("otel.metrics.exporter", defaultExporter);
