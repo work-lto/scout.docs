@@ -341,3 +341,42 @@ include::common:example$org.eclipse.scout.docs.snippets/src/main/java/org/eclips
 
 All instances of `IId` can be serialized and deserialized by the `IdCodec` using signatures. This can be used to add signatures to ids that are read and written by a REST endpoint.
 For more information see xref:technical-guide:common-concepts/security.adoc#iid-signature[IId signature].
+
+== Meta Resource
+
+Scout provides a `MetaResource` which a set of endpoints offering various meta information about available endpoints.
+The `MetaResource` is available at `https://<server-url>/api/meta/`
+
+=== Version
+
+See `MetaResource` endpoint `/version` (e.g. `https://<server-url>/api/meta/version?verbose=true`) for version information.
+The response looks like:
+
+[source,json]
+----
+{
+"_type": "suite.MetaVersionInfo",
+"applicationName": "My Application", <1>
+"applicationVersion": "1.2.34", <2>
+"buildDate": "2024-11-20 16:01:32.000" <3>
+}
+----
+<1> Based on config property `scout.application.name`
+<2> Based on config property `scout.application.version`
+<3> Based on `IModuleBuildDateProvider` implementation, which allows an application to provide its own build date.
+
+=== Example implementation for `IModuleBuildDateProvider`
+
+
+[source,java]
+----
+public class BuildDateProvider implements IModuleBuildDateProvider {
+  @Override
+  public Date getBuildDate() {
+    return BEANS.get(JarManifestHelper.class).getBuildDateAttribute(getClass());  <1>
+  }
+}
+----
+<1> Reads build date from JAR manifest of module of class which is specified by `getClass()`.
+
+

@@ -57,3 +57,22 @@ Scout 25.1 requires at least the following:
 == Simplified UiCallback
 
 The API to call TypeScript code from the Java client code has been simplified and streamlined. See the xref:technical-guide:user-interface/ui-callback.adoc[UI Callback technical guide] for more details.
+
+== REST MetaResource version endpoint: IApiVersion removed, new support for build date provider
+
+The `IApiVersion` interface which was references by `MetaResource` operation `/version` was removed.
+The API version was never used (e.g. increased) and did not provide any value.
+The `MetaResource` operation `/version` still provides info about application name and version.
+
+Additionally, a new `IModuleBuildDateProvider` was introduced, which allows an application to provide its own build date which is then returned as part of the `MetaResource` endpoint `/version`.
+
+The `MetaResource` endpoint `/version` (e.g. `https://<server-url>/api/meta/version?verbose=true`) returns:
+
+----
+{
+"_type": "suite.MetaVersionInfo",
+"applicationName": "My Application",
+"applicationVersion": "1.2.34",
+"buildDate": "2024-11-20 16:01:32.000"
+}
+----
