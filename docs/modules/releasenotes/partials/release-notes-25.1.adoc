@@ -76,3 +76,20 @@ The `MetaResource` endpoint `/version` (e.g. `https://<server-url>/api/meta/vers
 "buildDate": "2024-11-20 16:01:32.000"
 }
 ----
+
+== Change keystroke for search and reset button
+Changed the shortcut keys for search and reset to a more common key
+combination.
+
+[cols="2,1,1"]
+|===
+|Function |Old keystroke |New keystroke
+
+|Open search in a table page
+|F6
+|Ctrl-Shift-F
+
+|Reset button (Reset search form)
+|Ctrl-F6
+|Ctrl-Shift-Z
+|===
