@@ -212,6 +212,7 @@ export * from './table/ColumnPropertiesBox';
 export * from './table/ColumnPropertiesBoxModel';
 export * from './table/BooleanColumnPropertiesBox';
 export * from './table/BooleanColumnPropertiesBoxModel';
+export * from './table/LookupColumnPropertiesBox';
 export * from './table/NumberColumnPropertiesBox';
 export * from './table/NumberColumnPropertiesBoxModel';
 export * from './table/SmartColumnPropertiesBox';
