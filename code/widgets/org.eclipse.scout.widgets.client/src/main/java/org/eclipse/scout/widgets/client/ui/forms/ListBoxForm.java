@@ -186,19 +186,6 @@ public class ListBoxForm extends AbstractForm implements IAdvancedExampleForm {
         public class DefaultField extends AbstractListBox<Color> {
 
           @Override
-          protected void execInitField() {
-            getTable().addTableListener(evt -> {
-              ITableRow checkedRow = evt.getFirstRow();
-              if (!checkedRow.isChecked()) {
-                return;
-              }
-              getTable().getRows().stream()
-                  .filter(row -> row != checkedRow)
-                  .forEach(row -> getTable().uncheckRow(row));
-            }, TableEvent.TYPE_ROWS_CHECKED);
-          }
-
-          @Override
           protected Class<? extends ICodeType<?, Color>> getConfiguredCodeType() {
             return ColorsCodeType.class;
           }
