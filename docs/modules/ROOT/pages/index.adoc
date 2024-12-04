@@ -1,7 +1,7 @@
 = Overview
 include::common:partial$_header.adoc[]
 
-These pages document https://www.eclipse.org/scout/[Eclipse Scout].
+These pages document https://eclipse.dev/scout/[Eclipse Scout].
 
 Here you will find all Scout {scout-version} related documentation, from getting started to architecture details to release upgrades.
 

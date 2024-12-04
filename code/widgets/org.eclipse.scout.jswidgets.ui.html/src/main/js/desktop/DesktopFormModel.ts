@@ -98,13 +98,13 @@ export default (): FormModel => ({
                         lookupCall: {
                           objectType: StaticLookupCall,
                           data: [
-                            ['https://www.eclipse.org/scout', 'https://www.eclipse.org/scout'],
-                            ['http://google.com', 'http://google.com'],
+                            ['https://eclipse.dev/scout/', 'https://eclipse.dev/scout/'],
+                            ['https://google.com', 'https://google.com'],
                             ['mailto:info@example.org', 'mailto:info@example.org'],
                             ['tel:+1234567890', 'tel:+1234567890'],
                             ['img/fish.jpg', 'img/fish.jpg'],
                             ['misc/pdf-file.pdf', 'misc/pdf-file.pdf'],
-                            ['http://maps.apple.com/?q=Baden, Schweiz', 'http://maps.apple.com/?q=Baden, Schweiz']
+                            ['https://maps.apple.com/?q=Baden, Schweiz', 'https://maps.apple.com/?q=Baden, Schweiz']
                           ]
                         }
                       },
