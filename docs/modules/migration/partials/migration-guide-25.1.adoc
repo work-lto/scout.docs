@@ -110,6 +110,13 @@ If your implementation references implementation classes the package name needs 
 
 Furthermore, invoking TypeScript code from the client Java code has been simplified using `org.eclipse.scout.rt.client.ui.desktop.hybrid.uicallback.UiCallbacks`. See the xref:technical-guide:user-interface/ui-callback.adoc[UI Callback technical guide] for more details.
 
+== LESS constant renamed
+
+The LESS constant `@icon-error` for the xref:technical-guide:user-interface/icons.adoc[font icon] with the code point U+E001 was renamed to `@icon-exclamation-mark-circle` to align it with its corresponding Java and JavaScript constants.
+
+_Migration:_
+Search for references to the constant `@icon-error` in your own *.less files and replace it with `@icon-exclamation-mark-circle` where appropriate.
+
 == Scout JS
 
 === FormField: use _computeEmpty instead of _updateEmpty
