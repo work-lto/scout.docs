@@ -17,6 +17,7 @@ import org.eclipse.scout.rt.platform.chain.IChainable;
 import org.eclipse.scout.rt.platform.chain.callable.CallableChain;
 import org.eclipse.scout.rt.platform.logger.DiagnosticContextValueProcessor;
 import org.eclipse.scout.rt.platform.nls.NlsLocale;
+import org.eclipse.scout.rt.platform.opentelemetry.OpenTelemetryContextProcessor;
 import org.eclipse.scout.rt.platform.security.SubjectProcessor;
 import org.eclipse.scout.rt.platform.transaction.TransactionProcessor;
 import org.eclipse.scout.rt.platform.util.ThreadLocalProcessor;
@@ -80,7 +81,11 @@ public class RunContextChainTest {
     assertEquals(ThreadLocalProcessor.class, c.getClass());
     assertSame(PropertyMap.CURRENT, ((ThreadLocalProcessor) c).getThreadLocal());
 
-    // 9. TransactionProcessor
+    // 10. OpenTelemetryContextProcessor
+    c = chainIterator.next();
+    assertEquals(OpenTelemetryContextProcessor.class, c.getClass());
+
+    // 11. TransactionProcessor
     c = chainIterator.next();
     assertEquals(TransactionProcessor.class, c.getClass());
     assertFalse(chainIterator.hasNext());
