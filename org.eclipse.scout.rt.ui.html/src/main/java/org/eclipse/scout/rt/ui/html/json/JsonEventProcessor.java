@@ -9,17 +9,19 @@
  */
 package org.eclipse.scout.rt.ui.html.json;
 
+import static org.eclipse.scout.rt.shared.opentelemetry.JsonEventProcessorInstrumenterFactory.*;
+import static org.eclipse.scout.rt.shared.opentelemetry.OpenTelemetryInstrumenterHelper.addNameToContext;
+
 import org.eclipse.scout.rt.client.job.ModelJobs;
-import org.eclipse.scout.rt.platform.BEANS;
 import org.eclipse.scout.rt.platform.exception.PlatformException;
-import org.eclipse.scout.rt.platform.opentelemetry.ITracingHelper;
 import org.eclipse.scout.rt.platform.util.Assertions;
-import org.eclipse.scout.rt.platform.util.StringUtility;
 import org.eclipse.scout.rt.ui.html.IUiSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.instrumentation.api.instrumenter.Instrumenter;
 
 /**
  * Processes JSON events from the UI in a Scout model job and waits for all model jobs of that session to complete.
@@ -29,11 +31,11 @@ public class JsonEventProcessor {
   private static final Logger LOG = LoggerFactory.getLogger(JsonEventProcessor.class);
 
   private final IUiSession m_uiSession;
-  private final Tracer m_tracer;
+  private final Instrumenter<OpenTelemetryJsonEventProcessorRequest, Void> m_instrumenter;
 
   public JsonEventProcessor(IUiSession uiSession) {
     m_uiSession = uiSession;
-    m_tracer = BEANS.get(ITracingHelper.class).createTracer(JsonEventProcessor.class);
+    m_instrumenter = createInstrumenter();
   }
 
   public void processEvents(final JsonRequest request, final JsonResponse response) {
@@ -41,17 +43,39 @@ public class JsonEventProcessor {
         Thread.currentThread().getName(), request, response);
 
     for (final JsonEvent event : request.getEvents()) {
-      String spanName = "process" + StringUtility.uppercaseFirst(event.getType()) + "Event";
-      BEANS.get(ITracingHelper.class).wrapInSpan(m_tracer, spanName, span -> {
-        span.setAttribute("scout.client.json.event.type", event.getType());
-        span.setAttribute("scout.client.json.event.target", event.getTarget());
-        span.setAttribute("scout.client.json.event", event.toJson().toString());
-        processEvent(event, response);
-      });
+      processEvent(event, response);
     }
   }
 
   protected void processEvent(JsonEvent event, JsonResponse response) {
+    Context parentContext = Context.current();
+    IJsonAdapter<?> jsonAdapter = m_uiSession.getJsonAdapter(event.getTarget());
+    OpenTelemetryJsonEventProcessorRequest request = new OpenTelemetryJsonEventProcessorRequest<>(jsonAdapter.getModel().getClass(), event.getType());
+
+    if (!m_instrumenter.shouldStart(parentContext, request)) {
+      processEventInternal(event, response);
+      return;
+    }
+
+    Context context = m_instrumenter.start(parentContext, request);
+    try (Scope ignored = context.makeCurrent()) {
+      processEventInternal(event, response);
+      addNameToContext(getName(request));
+    }
+    catch (Throwable t) {
+      m_instrumenter.end(context, request, null, t);
+      throw t;
+    }
+    m_instrumenter.end(context, request, null, null);
+  }
+
+  protected String getName(OpenTelemetryJsonEventProcessorRequest request) {
+    String fullName = request.getAdapterModelClass().getName();
+    String adapterModel = fullName.substring(fullName.lastIndexOf('.') + 1);
+    return adapterModel + "." + request.getEventType();
+  }
+
+  protected void processEventInternal(JsonEvent event, JsonResponse response) {
     final IJsonAdapter<?> jsonAdapter = m_uiSession.getJsonAdapter(event.getTarget());
     if (jsonAdapter == null) {
       LOG.info("No adapter found for event. {}", event.toSafeString());

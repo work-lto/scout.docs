@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023 BSI Business Systems Integration AG
+ * Copyright (c) 2010, 2024 BSI Business Systems Integration AG
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -8,6 +8,9 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.scout.rt.server;
+
+import static org.eclipse.scout.rt.server.commons.opentelemetry.ServiceTunnelServletInstrumenterFactory.createInstrumenter;
+import static org.eclipse.scout.rt.shared.opentelemetry.OpenTelemetryInstrumenterHelper.addNameToContext;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -51,6 +54,10 @@ import org.eclipse.scout.rt.shared.ui.UserAgents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.instrumentation.api.instrumenter.Instrumenter;
+
 /**
  * Use this Servlet to dispatch scout UI service requests using {@link IServiceTunnelRequest},
  * {@link IServiceTunnelResponse} and any {@link IServiceTunnelContentHandler} implementation.
@@ -68,6 +75,13 @@ public class ServiceTunnelServlet extends AbstractHttpServlet {
   protected transient LazyValue<HttpCacheControl> m_httpCacheControl = new LazyValue<>(HttpCacheControl.class);
   protected transient LazyValue<ServiceOperationInvoker> m_svcInvoker = new LazyValue<>(ServiceOperationInvoker.class);
   protected transient LazyValue<RunMonitorCancelRegistry> m_runMonCancelRegistry = new LazyValue<>(RunMonitorCancelRegistry.class);
+
+  private final Instrumenter<ServiceTunnelRequest, ServiceTunnelResponse> m_instrumenter;
+
+  public ServiceTunnelServlet() {
+    super();
+    m_instrumenter = createInstrumenter();
+  }
 
   // === HTTP-GET ===
 
@@ -178,6 +192,33 @@ public class ServiceTunnelServlet extends AbstractHttpServlet {
   }
 
   protected ServiceTunnelResponse doPost(ServiceTunnelRequest serviceRequest) {
+    io.opentelemetry.context.Context parentContext = Context.current();
+
+    if (!m_instrumenter.shouldStart(parentContext, serviceRequest)) {
+      return doPostInternal(serviceRequest);
+    }
+
+    Context context = m_instrumenter.start(parentContext, serviceRequest);
+    ServiceTunnelResponse response;
+    try (Scope ignored = context.makeCurrent()) {
+      response = doPostInternal(serviceRequest);
+      addNameToContext(getName(serviceRequest));
+    }
+    catch (Throwable t) {
+      m_instrumenter.end(context, serviceRequest, null, t);
+      throw t;
+    }
+    m_instrumenter.end(context, serviceRequest, response, null);
+    return response;
+  }
+
+  protected String getName(ServiceTunnelRequest serviceRequest) {
+    String fullName = serviceRequest.getServiceInterfaceClassName();
+    String serviceName = fullName.substring(fullName.lastIndexOf('.') + 1);
+    return serviceName + "." + serviceRequest.getOperation();
+  }
+
+  protected ServiceTunnelResponse doPostInternal(ServiceTunnelRequest serviceRequest) {
     if (LOG.isDebugEnabled()) {
       LOG.debug("requestSequence {} {}.{}", serviceRequest.getRequestSequence(), serviceRequest.getServiceInterfaceClassName(), serviceRequest.getOperation());
     }

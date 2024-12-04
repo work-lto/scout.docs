@@ -9,31 +9,29 @@
  */
 package org.eclipse.scout.rt.platform.opentelemetry;
 
-import org.eclipse.scout.rt.platform.chain.callable.CallableChain.Chain;
-import org.eclipse.scout.rt.platform.chain.callable.ICallableInterceptor;
+import org.eclipse.scout.rt.platform.chain.callable.ICallableDecorator;
+import org.eclipse.scout.rt.platform.context.RunContext;
 
 import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
 
-public class OpenTelemetryContextProcessor<RESULT> implements ICallableInterceptor<RESULT> {
+public class OpenTelemetryContextProcessor implements ICallableDecorator {
 
-  protected final Context m_openTelemetryContext;
+  public static final IUndecorator NOOP = () -> {};
 
-  public OpenTelemetryContextProcessor(final Context openTelemetryContext) {
-    m_openTelemetryContext = openTelemetryContext;
+  public OpenTelemetryContextProcessor() {
   }
 
+  @SuppressWarnings("resource")
   @Override
-  public RESULT intercept(Chain<RESULT> chain) throws Exception {
-    if (m_openTelemetryContext != null) {
-      return m_openTelemetryContext.wrap(() -> chain.continueChain()).call();
+  public IUndecorator decorate() throws Exception {
+    Context openTelemetryContext = RunContext.CURRENT.get().getOpenTelemetryContext();
+    if (openTelemetryContext == null) {
+      return NOOP;
     }
-    else {
-      return chain.continueChain();
-    }
+    Scope scope = openTelemetryContext.makeCurrent();
+
+    return scope::close;
   }
 
-  @Override
-  public boolean isEnabled() {
-    return m_openTelemetryContext != null;
-  }
 }

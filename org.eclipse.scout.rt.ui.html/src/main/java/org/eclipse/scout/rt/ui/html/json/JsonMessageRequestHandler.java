@@ -23,11 +23,9 @@ import org.eclipse.scout.rt.platform.Order;
 import org.eclipse.scout.rt.platform.Platform;
 import org.eclipse.scout.rt.platform.config.CONFIG;
 import org.eclipse.scout.rt.platform.config.PlatformConfigProperties.ApplicationVersionProperty;
-import org.eclipse.scout.rt.platform.context.CorrelationId;
 import org.eclipse.scout.rt.platform.context.RunContexts;
 import org.eclipse.scout.rt.platform.exception.DefaultExceptionTranslator;
 import org.eclipse.scout.rt.platform.exception.PlatformError;
-import org.eclipse.scout.rt.platform.opentelemetry.ITracingHelper;
 import org.eclipse.scout.rt.platform.resource.MimeType;
 import org.eclipse.scout.rt.platform.util.ObjectUtility;
 import org.eclipse.scout.rt.platform.util.StringUtility;
@@ -45,8 +43,6 @@ import org.eclipse.scout.rt.ui.html.logging.IUiRunContextDiagnostics;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import io.opentelemetry.api.trace.Tracer;
 
 /**
  * This handler contributes to the {@link UiServlet} as the POST handler for /json.
@@ -122,7 +118,12 @@ public class JsonMessageRequestHandler extends AbstractUiServletRequestHandler {
 
       uiSession.verifySubject(req);
 
-      handleJsonMessageRequest(uiSession, jsonRequest, req, resp);
+      // Associate subsequent processing with the uiSession and jsonRequest.
+      RunContexts.copyCurrent()
+          .withThreadLocal(IUiSession.CURRENT, uiSession)
+          .withThreadLocal(JsonRequest.CURRENT, jsonRequest)
+          .withDiagnostics(BEANS.all(IUiRunContextDiagnostics.class))
+          .run(() -> handleJsonRequest(IUiSession.CURRENT.get(), JsonRequest.CURRENT.get(), req, resp), DefaultExceptionTranslator.class);
     }
     catch (Exception | PlatformError e) {
       if (jsonRequest == null || uiSession == null || jsonRequest.getRequestType() == RequestType.STARTUP_REQUEST) {
@@ -142,37 +143,6 @@ public class JsonMessageRequestHandler extends AbstractUiServletRequestHandler {
       }
     }
     return true;
-  }
-
-  protected void handleJsonMessageRequest(IUiSession uiSession, JsonRequest jsonRequest, HttpServletRequest req, HttpServletResponse res) throws Exception {
-    // No trace for polling requests
-    if (jsonRequest.getRequestType() == RequestType.POLL_REQUEST) {
-      handleJsonRequestAsync(uiSession, jsonRequest, req, res);
-      return;
-    }
-
-    Tracer tracer = BEANS.get(ITracingHelper.class).createTracer(JsonMessageRequestHandler.class);
-
-    BEANS.get(ITracingHelper.class).wrapInThrowingSpan(tracer, "handleJsonRequest", span -> {
-      // Add attributes
-      span.setAttribute("scout.corelation.id", CorrelationId.CURRENT.get());
-      span.setAttribute("scout.client.session.id", uiSession.getClientSessionId());
-      span.setAttribute("scout.client.json.request", jsonRequest.toString());
-      span.setAttribute("http.request.method", req.getMethod());
-      span.setAttribute("url.full", req.getRequestURI());
-
-      // Execute request
-      handleJsonRequestAsync(uiSession, jsonRequest, req, res);
-    });
-  }
-
-  protected void handleJsonRequestAsync(IUiSession uiSession, JsonRequest jsonRequest, HttpServletRequest req, HttpServletResponse res) throws Exception {
-    // Associate subsequent processing with the uiSession and jsonRequest.
-    RunContexts.copyCurrent()
-        .withThreadLocal(IUiSession.CURRENT, uiSession)
-        .withThreadLocal(JsonRequest.CURRENT, jsonRequest)
-        .withDiagnostics(BEANS.all(IUiRunContextDiagnostics.class))
-        .run(() -> handleJsonRequest(IUiSession.CURRENT.get(), JsonRequest.CURRENT.get(), req, res), DefaultExceptionTranslator.class);
   }
 
   protected void handleJsonRequest(IUiSession uiSession, JsonRequest jsonRequest, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException {

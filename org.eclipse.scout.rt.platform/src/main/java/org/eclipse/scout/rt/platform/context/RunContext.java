@@ -196,7 +196,7 @@ public class RunContext implements IAdaptable {
         .add(new DiagnosticContextValueProcessor(BEANS.get(CorrelationIdContextValueProvider.class)))
         .add(new ThreadLocalProcessor<>(NlsLocale.CURRENT, m_locale))
         .add(new ThreadLocalProcessor<>(PropertyMap.CURRENT, m_propertyMap))
-        .add(new OpenTelemetryContextProcessor<>(m_openTelemetryContext))
+        .add(new OpenTelemetryContextProcessor())
         .addAll(m_threadLocalProcessors.values())
         .addAll(contributions.asList())
         .addAll(m_diagnosticProcessors.values())
@@ -498,7 +498,7 @@ public class RunContext implements IAdaptable {
    * Attaches a OpenTelemetry {@link Context} with the RunContext
    *
    * @param context
-   *     Context to be attached
+   *          Context to be attached
    * @return the RunContext with an OpenTelemetry Context
    */
   public RunContext withOpenTelemetryContext(final Context context) {

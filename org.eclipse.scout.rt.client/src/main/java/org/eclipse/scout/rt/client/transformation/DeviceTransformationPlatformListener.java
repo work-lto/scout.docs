@@ -9,14 +9,14 @@
  */
 package org.eclipse.scout.rt.client.transformation;
 
-import org.eclipse.scout.rt.client.opentelemetry.TracingActionExtension;
-import org.eclipse.scout.rt.client.opentelemetry.TracingButtonExtension;
-import org.eclipse.scout.rt.client.opentelemetry.TracingCalendarItemProviderExtension;
-import org.eclipse.scout.rt.client.opentelemetry.TracingFormHandlerExtension;
-import org.eclipse.scout.rt.client.opentelemetry.TracingPageWithTableExtension;
-import org.eclipse.scout.rt.client.opentelemetry.TracingTableExtension;
-import org.eclipse.scout.rt.client.opentelemetry.TracingTreeExtension;
-import org.eclipse.scout.rt.client.opentelemetry.TracingWizardExtension;
+import org.eclipse.scout.rt.client.opentelemetry.OpenTelemetryActionExtension;
+import org.eclipse.scout.rt.client.opentelemetry.OpenTelemetryButtonExtension;
+import org.eclipse.scout.rt.client.opentelemetry.OpenTelemetryCalendarItemProviderExtension;
+import org.eclipse.scout.rt.client.opentelemetry.OpenTelemetryFormHandlerExtension;
+import org.eclipse.scout.rt.client.opentelemetry.OpenTelemetryPageWithTableExtension;
+import org.eclipse.scout.rt.client.opentelemetry.OpenTelemetryTableExtension;
+import org.eclipse.scout.rt.client.opentelemetry.OpenTelemetryTreeExtension;
+import org.eclipse.scout.rt.client.opentelemetry.OpenTelemetryWizardExtension;
 import org.eclipse.scout.rt.platform.BEANS;
 import org.eclipse.scout.rt.platform.IPlatform.State;
 import org.eclipse.scout.rt.platform.IPlatformListener;
@@ -36,14 +36,14 @@ public class DeviceTransformationPlatformListener implements IPlatformListener {
       BEANS.get(IExtensionRegistry.class).register(FormFieldExtension.class);
 
       // Observability
-      BEANS.get(IExtensionRegistry.class).register(TracingActionExtension.class);
-      BEANS.get(IExtensionRegistry.class).register(TracingButtonExtension.class);
-      BEANS.get(IExtensionRegistry.class).register(TracingCalendarItemProviderExtension.class);
-      BEANS.get(IExtensionRegistry.class).register(TracingFormHandlerExtension.class);
-      BEANS.get(IExtensionRegistry.class).register(TracingPageWithTableExtension.class);
-      BEANS.get(IExtensionRegistry.class).register(TracingTableExtension.class);
-      BEANS.get(IExtensionRegistry.class).register(TracingTreeExtension.class);
-      BEANS.get(IExtensionRegistry.class).register(TracingWizardExtension.class);
+      BEANS.get(IExtensionRegistry.class).register(OpenTelemetryActionExtension.class);
+      BEANS.get(IExtensionRegistry.class).register(OpenTelemetryButtonExtension.class);
+      BEANS.get(IExtensionRegistry.class).register(OpenTelemetryCalendarItemProviderExtension.class);
+      BEANS.get(IExtensionRegistry.class).register(OpenTelemetryFormHandlerExtension.class);
+      BEANS.get(IExtensionRegistry.class).register(OpenTelemetryPageWithTableExtension.class);
+      BEANS.get(IExtensionRegistry.class).register(OpenTelemetryTableExtension.class);
+      BEANS.get(IExtensionRegistry.class).register(OpenTelemetryTreeExtension.class);
+      BEANS.get(IExtensionRegistry.class).register(OpenTelemetryWizardExtension.class);
     }
   }
 

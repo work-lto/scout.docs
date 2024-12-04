@@ -26,6 +26,7 @@ import org.eclipse.scout.rt.platform.util.concurrent.ICancellable;
 import org.eclipse.scout.rt.platform.util.concurrent.ThreadInterruptedError;
 import org.eclipse.scout.rt.shared.SharedConfigProperties.ServiceTunnelTargetUrlProperty;
 import org.eclipse.scout.rt.shared.http.IHttpTransportManager;
+import org.eclipse.scout.rt.shared.opentelemetry.HttpServiceTunnelInstrumenterFactory;
 import org.eclipse.scout.rt.shared.servicetunnel.AbstractServiceTunnel;
 import org.eclipse.scout.rt.shared.servicetunnel.BinaryServiceTunnelContentHandler;
 import org.eclipse.scout.rt.shared.servicetunnel.IServiceTunnelContentHandler;
@@ -42,7 +43,9 @@ import com.google.api.client.http.HttpResponse;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
 import io.opentelemetry.context.propagation.TextMapSetter;
+import io.opentelemetry.instrumentation.api.instrumenter.Instrumenter;
 
 /**
  * Abstract tunnel used to invoke a service through HTTP.
@@ -57,6 +60,8 @@ public class HttpServiceTunnel extends AbstractServiceTunnel {
   private final GenericUrl m_genericUrl;
   private final boolean m_active;
 
+  private final Instrumenter<ServiceTunnelRequest, Void> m_instrumenter;
+
   public HttpServiceTunnel() {
     this(getConfiguredServerUrl());
   }
@@ -65,6 +70,7 @@ public class HttpServiceTunnel extends AbstractServiceTunnel {
     m_serverUrl = url;
     m_genericUrl = url != null ? new GenericUrl(url) : null;
     m_active = url != null;
+    m_instrumenter = HttpServiceTunnelInstrumenterFactory.createInstrumenter();
   }
 
   protected static URL getConfiguredServerUrl() {
@@ -103,7 +109,7 @@ public class HttpServiceTunnel extends AbstractServiceTunnel {
    *           override this method to customize the creation of the {@link HttpResponse} see
    *           {@link #addCustomHeaders(HttpRequest, ServiceTunnelRequest, byte[])}
    */
-  protected HttpResponse executeRequest(ServiceTunnelRequest call, byte[] callData) throws IOException {
+  protected HttpResponse executeRequestInternal(ServiceTunnelRequest call, byte[] callData) throws IOException {
     // fast check of wrong URL's for this tunnel
     if (!"http".equalsIgnoreCase(getServerUrl().getProtocol()) && !"https".equalsIgnoreCase(getServerUrl().getProtocol())) {
       throw new IOException("URL '" + getServerUrl().toString() + "' is not supported by this tunnel ('" + getClass().getName() + "').");
@@ -123,6 +129,26 @@ public class HttpServiceTunnel extends AbstractServiceTunnel {
     return request.execute();
   }
 
+  protected HttpResponse executeRequest(ServiceTunnelRequest call, byte[] callData) throws IOException {
+    Context parentContext = Context.current();
+
+    if (!m_instrumenter.shouldStart(parentContext, call)) {
+      return executeRequestInternal(call, callData);
+    }
+
+    Context context = m_instrumenter.start(parentContext, call);
+    HttpResponse response;
+    try (Scope ignored = context.makeCurrent()) {
+      response = executeRequestInternal(call, callData);
+    }
+    catch (Throwable t) {
+      m_instrumenter.end(context, call, null, t);
+      throw t;
+    }
+    m_instrumenter.end(context, call, null, null);
+    return response;
+  }
+
   /**
    * @return the {@link IHttpTransportManager}
    */
@@ -138,6 +164,7 @@ public class HttpServiceTunnel extends AbstractServiceTunnel {
    * @param callData
    *          data as byte array
    * @throws IOException
+   *           exception
    * @since 6.0
    */
   protected void addCustomHeaders(HttpRequest httpRequest, ServiceTunnelRequest call, byte[] callData) throws IOException {
