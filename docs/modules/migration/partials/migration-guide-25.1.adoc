@@ -103,7 +103,9 @@ Scout uses snapshot ranges (>=25.1.0-snapshot <25.1.0) in the `package.json` fil
 
 If the flag is false, `pnpm install` or `pnpm update` downloads the dependencies instead of using the ones from the workspace.
 
-So this flag needs to be true when having more than one npm package in the workspace that depend on each other. To do so, add the property `link-workspace-packages=true` to your `.npmrc` file in your workspace or user home directory. We also recommend to put `prefer-workspace-packages=false` to ensure workspace packages are always preferred even if there are newer versions in the remote repository.
+So this flag needs to be true when having more than one npm package in the workspace that depend on each other.
+To do so, add the property `link-workspace-packages=true` to your `.npmrc` file in your workspace or user home directory.
+We also recommend to put `prefer-workspace-packages=true` to ensure workspace packages are always preferred even if there are newer versions in the remote repository.
 
 == Build Changes
 
