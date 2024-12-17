@@ -9,8 +9,8 @@
  */
 package org.eclipse.scout.jswidgets.ui.html.app;
 
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.scout.rt.jetty.IServletContributor;
 import org.eclipse.scout.rt.jetty.IServletFilterContributor;
 import org.eclipse.scout.rt.platform.Order;
